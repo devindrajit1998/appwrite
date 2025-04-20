@@ -1,6 +1,6 @@
 const { Client, Databases } = require("node-appwrite");
 
-export default async ({ req, res, log, error }) => {
+module.exports = async ({ req, res, log, error }) => {
   try {
     const payload = JSON.parse(req.payload);
     const userId = payload.$id;
@@ -23,9 +23,7 @@ export default async ({ req, res, log, error }) => {
         name: "",
         createdAt: new Date().toISOString(),
       },
-      [
-        `user:${userId}`,
-      ]
+      [`user:${userId}`]
     );
 
     log("User profile created for: " + userId);

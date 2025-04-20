@@ -31,7 +31,7 @@ module.exports = async ({ req, res, log, error }) => {
         email,
         name: "",
         password: payload.password,
-        createdAt: new Date().toISOString(),
+        // createdAt: new Date().toISOString(),
       },
       [
         `read("user:${userId}")`,

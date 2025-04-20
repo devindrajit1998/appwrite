@@ -32,7 +32,12 @@ module.exports = async ({ req, res, log, error }) => {
         name: "",
         createdAt: new Date().toISOString(),
       },
-      [`user:${userId}`]
+      [
+        `read("user:${userId}")`,
+        `write("user:${userId}")`,
+        `update("user:${userId}")`,
+        `delete("user:${userId}")`,
+      ]
     );
 
     log("✅ User profile created for: " + userId);

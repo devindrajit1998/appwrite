@@ -10,9 +10,8 @@ module.exports = async ({ req, res, log, error }) => {
 
     const userId = payload.$id;
     const email = payload.email;
-    const role = payload.role;
 
-    if (!userId || !email || !role) {
+    if (!userId || !email) {
       throw new Error("User ID and email are required");
     }
 
@@ -31,7 +30,6 @@ module.exports = async ({ req, res, log, error }) => {
         userId,
         email,
         name: "",
-        role: role,
       },
       [
         `read("user:${userId}")`,

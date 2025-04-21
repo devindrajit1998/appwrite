@@ -1,55 +1,49 @@
-const sdk = require("node-appwrite");
+const { Client, Databases } = require("node-appwrite");
 
-module.exports = async function (req, res) {
-  const client = new sdk.Client()
-    .setEndpoint("https://cloud.appwrite.io/v1")
-    .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
-    .setKey(process.env.APPWRITE_API_KEY);
-
-  const databases = new sdk.Databases(client);
-
+module.exports = async ({ req, res, log, error }) => {
   try {
-    if (!req.payload) {
-      throw new Error("No payload received");
+    const payload = req.body;
+
+    if (!payload || typeof payload !== "object") {
+      throw new Error("Invalid or missing request body");
     }
 
-    const data = JSON.parse(req.payload);
+    const userId = payload.$id;
+    const email = payload.email;
+    const name = payload.name;
 
-    const { userId, email, name, role } = data;
+    if (!userId || !email) {
+      throw new Error("User ID and email are required");
+    }
 
-    const databaseId = "68051d5b00243bd43c1b";
-    const collectionId = "68051d760023497301e1";
+    const client = new Client()
+      .setEndpoint("https://cloud.appwrite.io/v1")
+      .setProject(process.env.APPWRITE_PROJECT_ID)
+      .setKey(process.env.APPWRITE_API_KEY);
 
-    const document = await databases.createDocument(
-      databaseId,
-      collectionId,
+    const databases = new Databases(client);
+
+    await databases.createDocument(
+      process.env.APPWRITE_DATABASE_ID,
+      process.env.APPWRITE_COLLECTION_ID,
       "unique()",
       {
         userId,
         email,
         name,
-        role,
       },
       [
         `read("user:${userId}")`,
+        `write("user:${userId}")`,
         `update("user:${userId}")`,
         `delete("user:${userId}")`,
       ]
     );
 
-    res.send(
-      JSON.stringify({
-        success: true,
-        message: "User document created successfully",
-        data: document,
-      })
-    );
+    log("✅ User profile created for: " + userId);
+    return res.json({ success: true });
   } catch (err) {
-    res.send(
-      JSON.stringify({
-        success: false,
-        message: err.message,
-      })
-    );
+    error("❌ Error creating user profile: " + err.message);
+    return res.json({ success: false, message: err.message });
   }
 };

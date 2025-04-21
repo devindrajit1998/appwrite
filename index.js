@@ -1,20 +1,20 @@
 const { Client, Databases } = require("node-appwrite");
 
-module.exports = async ({ req, res, log, error }) => {
+module.exports = async function ({ req, res, log, error }) {
   try {
-    const payload = req.body;
+    const payload = req.payload ?? req.body;
 
     if (!payload || typeof payload !== "object") {
       throw new Error("Invalid or missing request body");
     }
 
-    const userId = payload.$id;
+    const userId = payload.$id || payload.userId;
     const email = payload.email;
     const name = payload.name;
-    const role = payload.role;
+    const role = payload.role || "student";
 
-    if (!userId || !email) {
-      throw new Error("User ID and email are required");
+    if (!userId || !email || !name) {
+      throw new Error("User ID, name, and email are required.");
     }
 
     const client = new Client()
@@ -24,7 +24,7 @@ module.exports = async ({ req, res, log, error }) => {
 
     const databases = new Databases(client);
 
-    await databases.createDocument(
+    const result = await databases.createDocument(
       process.env.APPWRITE_DATABASE_ID,
       process.env.APPWRITE_COLLECTION_ID,
       "unique()",
@@ -42,10 +42,10 @@ module.exports = async ({ req, res, log, error }) => {
       ]
     );
 
-    log("✅ User profile created for: " + userId);
-    return res.json({ success: true });
+    log(`✅ Document created for ${name} (${role})`);
+    res.json({ success: true, data: result });
   } catch (err) {
     error("❌ Error creating user profile: " + err.message);
-    return res.json({ success: false, message: err.message });
+    res.json({ success: false, message: err.message });
   }
 };

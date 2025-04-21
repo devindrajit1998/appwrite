@@ -1,49 +1,52 @@
-const { Client, Databases } = require("node-appwrite");
+const sdk = require("node-appwrite");
 
-module.exports = async ({ req, res, log, error }) => {
+module.exports = async function (req, res) {
+  const client = new sdk.Client()
+    .setEndpoint("https://cloud.appwrite.io/v1")
+    .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
+    .setKey(process.env.APPWRITE_API_KEY);
+
+  const database = new sdk.Databases(client);
+
   try {
-    const payload = req.body;
-
-    if (!payload || typeof payload !== "object") {
-      throw new Error("Invalid or missing request body");
-    }
-
+    const payload = JSON.parse(req.env.APPWRITE_FUNCTION_EVENT_DATA);
     const userId = payload.$id;
+    const name = payload.name || "";
     const email = payload.email;
-    const name = payload.name;
 
-    if (!userId || !email) {
-      throw new Error("User ID and email are required");
-    }
+    const role = payload.labels?.includes("student")
+      ? "student"
+      : payload.labels?.includes("teacher")
+      ? "teacher"
+      : "user";
 
-    const client = new Client()
-      .setEndpoint("https://cloud.appwrite.io/v1")
-      .setProject(process.env.APPWRITE_PROJECT_ID)
-      .setKey(process.env.APPWRITE_API_KEY);
-
-    const databases = new Databases(client);
-
-    await databases.createDocument(
-      process.env.APPWRITE_DATABASE_ID,
-      process.env.APPWRITE_COLLECTION_ID,
+    const result = await database.createDocument(
+      "68051d5b00243bd43c1b",
+      "68051d760023497301e1",
       "unique()",
       {
         userId,
-        email,
         name,
+        email,
+        role,
       },
       [
         `read("user:${userId}")`,
-        `write("user:${userId}")`,
         `update("user:${userId}")`,
         `delete("user:${userId}")`,
       ]
     );
 
-    log("✅ User profile created for: " + userId);
-    return res.json({ success: true });
+    return res.json({
+      success: true,
+      userId,
+      document: result,
+    });
   } catch (err) {
-    error("❌ Error creating user profile: " + err.message);
-    return res.json({ success: false, message: err.message });
+    console.error(err);
+    return res.json({
+      success: false,
+      message: err.message,
+    });
   }
 };
